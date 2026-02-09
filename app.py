@@ -11,7 +11,11 @@ from openai import OpenAI
 st.set_page_config(layout='wide')
 
 
-model = 'gpt-5-mini-2025-08-07'
+# model = 'gpt-5-mini-2025-08-07'
+model='gpt-4.1-mini-2025-04-14',
+# model='gpt-4o-2024-11-20',
+# model="o3-mini-2025-01-31",
+# model='gpt-4o-mini-2024-07-18',
 
 keywords = ['worst',
 'horrible',
