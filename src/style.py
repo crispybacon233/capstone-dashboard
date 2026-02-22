@@ -8,25 +8,26 @@ def apply_dashboard_style() -> None:
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
         :root {
-            --brand-ink: #12344d;
-            --brand-blue: #2c7da0;
-            --brand-cyan: #61a5c2;
-            --accent-amber: #ffba08;
-            --surface-0: #f6f8fb;
-            --surface-1: #ffffff;
-            --surface-2: #edf2f7;
-            --text-main: #1a202c;
-            --text-subtle: #4a5568;
-            --border-soft: #d9e2ec;
-            --shadow-soft: 0 6px 20px rgba(18, 52, 77, 0.08);
+            --brand-ink: #e6eef8;
+            --brand-blue: #6fb3d8;
+            --brand-cyan: #54c2d3;
+            --accent-amber: #f0c36d;
+            --surface-0: #0b1118;
+            --surface-1: #121a24;
+            --surface-2: #1a2431;
+            --text-main: #dbe6f4;
+            --text-subtle: #95a8bf;
+            --border-soft: #2b3a4d;
+            --shadow-soft: 0 10px 24px rgba(0, 0, 0, 0.35);
             --radius-md: 14px;
             --radius-sm: 10px;
         }
 
         [data-testid="stAppViewContainer"] {
             background:
-                radial-gradient(1200px 400px at 90% -10%, #e9f5ff 0%, rgba(233,245,255,0) 60%),
-                linear-gradient(180deg, var(--surface-0) 0%, #f7fafc 100%);
+                radial-gradient(1000px 380px at 88% -6%, rgba(84, 194, 211, 0.16) 0%, rgba(84, 194, 211, 0) 60%),
+                radial-gradient(900px 360px at -6% 18%, rgba(111, 179, 216, 0.14) 0%, rgba(111, 179, 216, 0) 62%),
+                linear-gradient(180deg, var(--surface-0) 0%, #0a1118 100%);
         }
 
         .stApp, .stMarkdown, .stText, p, li, label, [data-testid="stMetricValue"] {
@@ -47,7 +48,7 @@ def apply_dashboard_style() -> None:
         }
 
         .hero-wrap {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+            background: linear-gradient(135deg, rgba(19, 31, 44, 0.95) 0%, rgba(17, 26, 37, 0.95) 100%);
             border: 1px solid var(--border-soft);
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-soft);
@@ -81,9 +82,9 @@ def apply_dashboard_style() -> None:
             display: inline-block;
             padding: 0.2rem 0.55rem;
             border-radius: 999px;
-            background: #e6f4fb;
+            background: rgba(84, 194, 211, 0.12);
             color: var(--brand-blue);
-            border: 1px solid #c9e6f4;
+            border: 1px solid rgba(84, 194, 211, 0.35);
             font-size: 0.78rem;
             font-weight: 600;
             letter-spacing: 0.03em;
@@ -142,16 +143,16 @@ def apply_dashboard_style() -> None:
             margin-bottom: 0.45rem;
             padding: 0.26rem 0.6rem;
             border-radius: 999px;
-            background: #edf7fb;
-            border: 1px solid #d2ebf5;
-            color: #1f5670;
+            background: rgba(84, 194, 211, 0.12);
+            border: 1px solid rgba(111, 179, 216, 0.35);
+            color: #b9d9ee;
             font-size: 0.78rem;
             font-weight: 600;
         }
 
         .selection-cta {
-            border: 1px dashed #b9d7e6;
-            background: #f3fbff;
+            border: 1px dashed rgba(111, 179, 216, 0.45);
+            background: rgba(22, 35, 49, 0.8);
             border-radius: var(--radius-sm);
             padding: 0.9rem 1rem;
             margin-top: 0.4rem;
@@ -161,12 +162,12 @@ def apply_dashboard_style() -> None:
         .selection-cta h4 {
             margin: 0 0 0.2rem 0;
             font-size: 1rem;
-            color: #17536f;
+            color: #c6e3f5;
         }
 
         .selection-cta p {
             margin: 0;
-            color: #365a6b;
+            color: var(--text-subtle);
             font-size: 0.9rem;
         }
 
@@ -194,14 +195,15 @@ def apply_dashboard_style() -> None:
             border: 1px solid var(--border-soft);
             border-radius: 999px;
             padding: 0.35rem 0.8rem;
-            background: #f9fbfd;
+            background: rgba(24, 37, 52, 0.9);
+            color: var(--text-subtle);
             font-weight: 600;
         }
 
         [aria-selected="true"][data-baseweb="tab"] {
-            background: #e9f5fb;
-            border-color: #c9e6f4;
-            color: #0f4c66;
+            background: rgba(84, 194, 211, 0.16);
+            border-color: rgba(111, 179, 216, 0.6);
+            color: #d9eefb;
         }
 
         .helper-text {
@@ -216,11 +218,19 @@ def apply_dashboard_style() -> None:
 
 def get_plotly_layout_defaults() -> dict:
     return {
-        "template": "plotly_white",
+        "template": "plotly_dark",
         "paper_bgcolor": "rgba(0, 0, 0, 0)",
         "plot_bgcolor": "rgba(0, 0, 0, 0)",
-        "font": {"family": "IBM Plex Sans, Source Sans Pro, sans-serif", "size": 13, "color": "#1a202c"},
+        "font": {
+            "family": "IBM Plex Sans, Source Sans Pro, sans-serif",
+            "size": 13,
+            "color": "#dbe6f4",
+        },
         "margin": {"l": 34, "r": 18, "t": 42, "b": 34},
         "legend": {"orientation": "h", "yanchor": "bottom", "y": 1.01, "xanchor": "right", "x": 1.0},
-        "hoverlabel": {"font": {"family": "IBM Plex Sans, Source Sans Pro, sans-serif"}},
+        "hoverlabel": {
+            "bgcolor": "#101820",
+            "bordercolor": "#2b3a4d",
+            "font": {"family": "IBM Plex Sans, Source Sans Pro, sans-serif"},
+        },
     }

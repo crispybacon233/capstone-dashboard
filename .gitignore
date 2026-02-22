@@ -1,5 +1,5 @@
 .venv
 .devcontainer
-.streamlit
+.streamlit/*
 __pycache__/
 *.py[cod]

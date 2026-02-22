@@ -33,8 +33,8 @@ ABSOLUTE_RATING_COLOR_SCALE = [
 
 def _apply_plotly_defaults(fig: go.Figure) -> go.Figure:
     fig.update_layout(**get_plotly_layout_defaults())
-    fig.update_xaxes(showline=True, linecolor="#d9e2ec", gridcolor="#e5edf3")
-    fig.update_yaxes(showline=True, linecolor="#d9e2ec", gridcolor="#e5edf3")
+    fig.update_xaxes(showline=True, linecolor="#2f4155", gridcolor="#263648")
+    fig.update_yaxes(showline=True, linecolor="#2f4155", gridcolor="#263648")
     return fig
 
 
@@ -327,8 +327,8 @@ def _render_selection_cta() -> None:
     st.markdown(
         """
         <div class="selection-cta">
-            <h4>Select one or more venues on the map</h4>
-            <p>Use click, box, or lasso selection. Reviews and DeepInsights run only on selected venues.</p>
+            <h4>Select one or more venues in the Dashboard tab</h4>
+            <p>Use click, box, or lasso selection on the map. Reviews and Deep Insights run only on selected venues.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -453,7 +453,7 @@ def render_city_dashboard(config: CityConfig) -> None:
 
     with helper_col:
         st.markdown(
-            '<p class="helper-text">Use the filter popover to refine the market, then select venues on the map to unlock Reviews and DeepInsights.</p>',
+            '<p class="helper-text">Use the filter popover to refine the market, then use the Dashboard tab map selection to unlock Reviews and Deep Insights.</p>',
             unsafe_allow_html=True,
         )
 
@@ -478,103 +478,106 @@ def render_city_dashboard(config: CityConfig) -> None:
         active_filters.append(f"Min reviews: {min_reviews:,}")
 
     _render_active_filter_chips(active_filters)
+    dashboard_tab, trends_tab, reviews_tab, insights_tab = st.tabs(
+        ["Dashboard", "Trends", "Reviews", "Deep Insights"]
+    )
 
-    kpi_placeholder = st.container()
-
-    map_col, snapshot_col = st.columns([8, 4], gap="large")
-    selected_indices: list[int] = []
     selected_fac_ids: list[str] = []
+    with dashboard_tab:
+        kpi_placeholder = st.container()
+        map_col, snapshot_col = st.columns([8, 4], gap="large")
+        selected_indices: list[int] = []
 
-    with map_col:
-        if filtered_map_df.empty:
-            st.warning("No establishments match the current filters. Try widening your filter range.")
-        else:
-            map_fig = px.scatter_map(
-                data_frame=filtered_map_df,
-                lat="latitude",
-                lon="longitude",
-                zoom=config.default_zoom,
-                center={
-                    "lat": config.default_center_lat,
-                    "lon": config.default_center_lon,
-                },
-                color="average_rating",
-                color_continuous_scale=ABSOLUTE_RATING_COLOR_SCALE,
-                range_color=[1.0, 5.0],
-                opacity=0.68,
-                map_style="carto-positron",
-                hover_name="restaurant_name",
-                custom_data=["restaurant_name", "average_rating", "n_reviews", "category"],
-            )
-            map_fig.update_traces(
-                hovertemplate=(
-                    "%{customdata[0]}<br>"
-                    "Avg rating: %{customdata[1]:.2f}<br>"
-                    "Total reviews: %{customdata[2]:,.0f}<br>"
-                    "Category: %{customdata[3]}<extra></extra>"
-                ),
-                marker={"size": 8},
-            )
-            _apply_plotly_defaults(map_fig)
-            map_fig.update_layout(height=760)
-            map_fig.update_coloraxes(showscale=False)
-
-            map_selection = st.plotly_chart(
-                map_fig,
-                on_select="rerun",
-                use_container_width=True,
-            )
-            selected_indices = _selected_point_indices(map_selection)
-            if selected_indices:
-                selected_fac_ids = (
-                    filtered_map_df.iloc[selected_indices]["facility_id"].dropna().unique().tolist()
+        with map_col:
+            if filtered_map_df.empty:
+                st.warning("No establishments match the current filters. Try widening your filter range.")
+            else:
+                map_fig = px.scatter_map(
+                    data_frame=filtered_map_df,
+                    lat="latitude",
+                    lon="longitude",
+                    zoom=config.default_zoom,
+                    center={
+                        "lat": config.default_center_lat,
+                        "lon": config.default_center_lon,
+                    },
+                    color="average_rating",
+                    color_continuous_scale=ABSOLUTE_RATING_COLOR_SCALE,
+                    range_color=[1.0, 5.0],
+                    opacity=0.72,
+                    map_style="carto-darkmatter",
+                    hover_name="restaurant_name",
+                    custom_data=["restaurant_name", "average_rating", "n_reviews", "category"],
                 )
+                map_fig.update_traces(
+                    hovertemplate=(
+                        "%{customdata[0]}<br>"
+                        "Avg rating: %{customdata[1]:.2f}<br>"
+                        "Total reviews: %{customdata[2]:,.0f}<br>"
+                        "Category: %{customdata[3]}<extra></extra>"
+                    ),
+                    marker={"size": 8},
+                )
+                _apply_plotly_defaults(map_fig)
+                map_fig.update_layout(height=760)
+                map_fig.update_coloraxes(showscale=False)
 
-    with snapshot_col:
-        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
-        st.markdown('<p class="panel-title">Market snapshot</p>', unsafe_allow_html=True)
+                map_selection = st.plotly_chart(
+                    map_fig,
+                    on_select="rerun",
+                    use_container_width=True,
+                )
+                selected_indices = _selected_point_indices(map_selection)
+                if selected_indices:
+                    selected_fac_ids = (
+                        filtered_map_df.iloc[selected_indices]["facility_id"].dropna().unique().tolist()
+                    )
 
-        rating_distribution_df = _build_rating_distribution(filtered_map_df)
-        if rating_distribution_df.empty:
-            st.info("No rating data for current filters.")
-        else:
-            hist_fig = px.histogram(
-                rating_distribution_df,
-                x="average_rating",
-                nbins=24,
-                labels={"average_rating": "Average rating"},
-            )
-            hist_fig.update_traces(marker_color="#2c7da0", opacity=0.88)
-            _apply_plotly_defaults(hist_fig)
-            hist_fig.update_layout(height=260, title_text="Rating distribution")
-            st.plotly_chart(hist_fig, use_container_width=True)
+        with snapshot_col:
+            st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+            st.markdown('<p class="panel-title">Market snapshot</p>', unsafe_allow_html=True)
 
-        top_categories_df = _build_top_categories(filtered_map_df, limit=10)
-        if top_categories_df.empty:
-            st.info("No category data for current filters.")
-        else:
-            category_fig = px.bar(
-                top_categories_df.sort_values("est_count", ascending=True),
-                x="est_count",
-                y="category",
-                orientation="h",
-                color="avg_rating",
-                color_continuous_scale="Tealgrn",
-                labels={
-                    "est_count": "Venues",
-                    "category": "Category",
-                    "avg_rating": "Avg rating",
-                },
-            )
-            _apply_plotly_defaults(category_fig)
-            category_fig.update_layout(height=360, title_text="Top categories by venue count")
-            st.plotly_chart(category_fig, use_container_width=True)
+            rating_distribution_df = _build_rating_distribution(filtered_map_df)
+            if rating_distribution_df.empty:
+                st.info("No rating data for current filters.")
+            else:
+                hist_fig = px.histogram(
+                    rating_distribution_df,
+                    x="average_rating",
+                    nbins=24,
+                    labels={"average_rating": "Average rating"},
+                )
+                hist_fig.update_traces(marker_color="#54c2d3", opacity=0.88)
+                _apply_plotly_defaults(hist_fig)
+                hist_fig.update_layout(height=260, title_text="Rating distribution")
+                st.plotly_chart(hist_fig, use_container_width=True)
 
-        st.markdown("</div>", unsafe_allow_html=True)
+            top_categories_df = _build_top_categories(filtered_map_df, limit=10)
+            if top_categories_df.empty:
+                st.info("No category data for current filters.")
+            else:
+                category_fig = px.bar(
+                    top_categories_df.sort_values("est_count", ascending=True),
+                    x="est_count",
+                    y="category",
+                    orientation="h",
+                    color="avg_rating",
+                    color_continuous_scale="Tealgrn",
+                    labels={
+                        "est_count": "Venues",
+                        "category": "Category",
+                        "avg_rating": "Avg rating",
+                    },
+                )
+                _apply_plotly_defaults(category_fig)
+                category_fig.update_layout(height=360, title_text="Top categories by venue count")
+                st.plotly_chart(category_fig, use_container_width=True)
 
-    kpis = _compute_kpis(filtered_map_df, selected_fac_ids)
-    with kpi_placeholder:
-        _render_kpi_cards(kpis)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        kpis = _compute_kpis(filtered_map_df, selected_fac_ids)
+        with kpi_placeholder:
+            _render_kpi_cards(kpis)
 
     scoped_fac_ids = (
         selected_fac_ids
@@ -582,9 +585,7 @@ def render_city_dashboard(config: CityConfig) -> None:
         else filtered_map_df["facility_id"].dropna().unique().tolist()
     )
 
-    tab1, tab2, tab3 = st.tabs(["Trends", "Reviews", "DeepInsights"])
-
-    with tab1:
+    with trends_tab:
         monthly_metrics = _build_monthly_metrics(state_establishments, reviews, scoped_fac_ids)
         if monthly_metrics.height == 0:
             st.info("No monthly review trend available for the current scope.")
@@ -596,7 +597,7 @@ def render_city_dashboard(config: CityConfig) -> None:
                     x=trend_df["year_month"],
                     y=trend_df["review_count"],
                     name="Review volume",
-                    marker_color="#9dc3d8",
+                    marker_color="#4f7fa1",
                     opacity=0.5,
                 ),
                 secondary_y=True,
@@ -607,7 +608,7 @@ def render_city_dashboard(config: CityConfig) -> None:
                     y=trend_df["rolling_mean"],
                     name="Rolling avg rating (6m)",
                     mode="lines+markers",
-                    line={"color": "#1d6f95", "width": 3},
+                    line={"color": "#6fc6e3", "width": 3},
                     marker={"size": 4},
                 ),
                 secondary_y=False,
@@ -618,7 +619,7 @@ def render_city_dashboard(config: CityConfig) -> None:
                     y=trend_df["monthly_rating"],
                     name="Monthly avg rating",
                     mode="lines",
-                    line={"color": "#7aa8c3", "width": 1.8, "dash": "dot"},
+                    line={"color": "#9bc9df", "width": 1.8, "dash": "dot"},
                 ),
                 secondary_y=False,
             )
@@ -628,7 +629,7 @@ def render_city_dashboard(config: CityConfig) -> None:
             trend_fig.update_yaxes(title_text="Review count", secondary_y=True)
             st.plotly_chart(trend_fig, use_container_width=True)
 
-    with tab2:
+    with reviews_tab:
         if not selected_fac_ids:
             _render_selection_cta()
         else:
@@ -701,12 +702,12 @@ def render_city_dashboard(config: CityConfig) -> None:
                         y="count",
                         labels={"rating": "Rating", "count": "Matched reviews"},
                     )
-                    rating_fig.update_traces(marker_color="#2c7da0")
+                    rating_fig.update_traces(marker_color="#54c2d3")
                     _apply_plotly_defaults(rating_fig)
                     rating_fig.update_layout(height=320, title_text="Matched review ratings")
                     st.plotly_chart(rating_fig, use_container_width=True)
 
-    with tab3:
+    with insights_tab:
         if not selected_fac_ids:
             _render_selection_cta()
         else:
