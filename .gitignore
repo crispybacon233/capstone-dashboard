@@ -1,5 +1,6 @@
 .venv
 .devcontainer
-.streamlit/*
+!.streamlit/config.toml
+.streamlit/secrets.toml
 __pycache__/
 *.py[cod]
