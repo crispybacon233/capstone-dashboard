@@ -22,6 +22,13 @@ MODEL = "gpt-4.1-mini-2025-04-14"
 ESTABLISHMENTS_PATH = "data/all/all_establishments.parquet"
 REVIEWS_GLOB = "data/all/reviews/*.parquet"
 FILTER_DEFAULT_RATING_RANGE = (1.0, 5.0)
+ABSOLUTE_RATING_COLOR_SCALE = [
+    [0.00, "#b2182b"],
+    [0.25, "#ef8a62"],
+    [0.50, "#fee08b"],
+    [0.75, "#66bd63"],
+    [1.00, "#1a9850"],
+]
 
 
 def _apply_plotly_defaults(fig: go.Figure) -> go.Figure:
@@ -331,12 +338,21 @@ def _render_selection_cta() -> None:
 def _prepare_filter_keys(config: CityConfig) -> dict[str, str]:
     prefix = f"{config.slug}_filters"
     return {
-        "category_search": f"{prefix}_category_search",
         "categories": f"{prefix}_categories",
         "rating_range": f"{prefix}_rating_range",
         "min_reviews": f"{prefix}_min_reviews",
         "reset": f"{prefix}_reset",
     }
+
+
+def _reset_filter_state(filter_keys: dict[str, str]) -> None:
+    for state_key in (
+        filter_keys["categories"],
+        filter_keys["rating_range"],
+        filter_keys["min_reviews"],
+    ):
+        if state_key in st.session_state:
+            del st.session_state[state_key]
 
 
 def render_city_dashboard(config: CityConfig) -> None:
@@ -362,17 +378,11 @@ def render_city_dashboard(config: CityConfig) -> None:
 
     raw_map_df["n_reviews"] = raw_map_df["n_reviews"].fillna(0)
     all_categories = _load_categories(config.state)
-    top_category_candidates = (
-        raw_map_df["category"].dropna().astype(str).value_counts().head(12).index.tolist()
-    )
-    ordered_categories = top_category_candidates + [
-        category for category in all_categories if category not in top_category_candidates
-    ]
+    category_options = sorted(all_categories)
 
     filter_keys = _prepare_filter_keys(config)
     max_reviews = int(raw_map_df["n_reviews"].max()) if not raw_map_df.empty else 0
     defaults = {
-        filter_keys["category_search"]: "",
         filter_keys["categories"]: [],
         filter_keys["rating_range"]: FILTER_DEFAULT_RATING_RANGE,
         filter_keys["min_reviews"]: 0,
@@ -409,24 +419,10 @@ def render_city_dashboard(config: CityConfig) -> None:
     with controls_col:
         with st.popover("Filters", use_container_width=True):
             st.markdown("#### Category filters")
-            st.text_input(
-                "Search categories",
-                key=filter_keys["category_search"],
-                placeholder="Type to narrow categories",
-            )
-
-            search_term = st.session_state[filter_keys["category_search"]].strip().lower()
-            filtered_options = [
-                option
-                for option in ordered_categories
-                if not search_term or search_term in option.lower()
-            ]
-            selected_categories = list(st.session_state[filter_keys["categories"]])
-            options_for_widget = list(dict.fromkeys(selected_categories + filtered_options))
 
             st.multiselect(
                 "Categories",
-                options=options_for_widget,
+                options=category_options,
                 key=filter_keys["categories"],
                 placeholder="All categories",
             )
@@ -447,10 +443,13 @@ def render_city_dashboard(config: CityConfig) -> None:
                 key=filter_keys["min_reviews"],
             )
 
-            if st.button("Reset filters", key=filter_keys["reset"], use_container_width=True):
-                for state_key, default_value in defaults.items():
-                    st.session_state[state_key] = default_value
-                st.rerun()
+            st.button(
+                "Reset filters",
+                key=filter_keys["reset"],
+                use_container_width=True,
+                on_click=_reset_filter_state,
+                kwargs={"filter_keys": filter_keys},
+            )
 
     with helper_col:
         st.markdown(
@@ -477,8 +476,6 @@ def render_city_dashboard(config: CityConfig) -> None:
         active_filters.append(f"Rating: {rating_min:.1f} to {rating_max:.1f}")
     if min_reviews > 0:
         active_filters.append(f"Min reviews: {min_reviews:,}")
-    if st.session_state[filter_keys["category_search"]].strip():
-        active_filters.append("Category search active")
 
     _render_active_filter_chips(active_filters)
 
@@ -492,12 +489,6 @@ def render_city_dashboard(config: CityConfig) -> None:
         if filtered_map_df.empty:
             st.warning("No establishments match the current filters. Try widening your filter range.")
         else:
-            color_min = float(filtered_map_df["average_rating"].quantile(0.02))
-            color_max = float(filtered_map_df["average_rating"].quantile(0.90))
-            if color_min >= color_max:
-                color_min = max(1.0, color_min - 0.2)
-                color_max = min(5.0, color_max + 0.2)
-
             map_fig = px.scatter_map(
                 data_frame=filtered_map_df,
                 lat="latitude",
@@ -508,8 +499,8 @@ def render_city_dashboard(config: CityConfig) -> None:
                     "lon": config.default_center_lon,
                 },
                 color="average_rating",
-                color_continuous_scale="RdYlGn",
-                range_color=[color_min, color_max],
+                color_continuous_scale=ABSOLUTE_RATING_COLOR_SCALE,
+                range_color=[1.0, 5.0],
                 opacity=0.68,
                 map_style="carto-positron",
                 hover_name="restaurant_name",
