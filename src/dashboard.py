@@ -534,7 +534,7 @@ def render_city_dashboard(config: CityConfig) -> None:
                     )
 
         with snapshot_col:
-            st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+            st.markdown('<div class="panel-card" style="visibility: hidden;">', unsafe_allow_html=True)
             st.markdown('<p class="panel-title">Market snapshot</p>', unsafe_allow_html=True)
 
             rating_distribution_df = _build_rating_distribution(filtered_map_df)
